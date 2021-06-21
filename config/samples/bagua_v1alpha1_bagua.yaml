@@ -1,0 +1,7 @@
+apiVersion: bagua.kuaishou.com/v1alpha1
+kind: Bagua
+metadata:
+  name: bagua-sample
+spec:
+  # Add fields here
+  foo: bar
