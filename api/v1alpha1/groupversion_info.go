@@ -1,5 +1,5 @@
 /*
-Copyright 2021.
+Copyright 2021 Bagua-Operator Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ import (
 var (
 	// GroupVersion is group version used to register these objects
 	GroupVersion = schema.GroupVersion{Group: "bagua.kuaishou.com", Version: "v1alpha1"}
+
+	// GroupVersionKind is group version kind
+	GroupVersionKind = GroupVersion.WithKind("Bagua")
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
