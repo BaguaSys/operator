@@ -11,5 +11,7 @@ const (
 )
 
 const (
-	ReplicaEtcd commonv1.ReplicaType = "etcd"
+	ReplicaMaster commonv1.ReplicaType = "master"
+	ReplicaWorker commonv1.ReplicaType = "worker"
+	ReplicaEtcd   commonv1.ReplicaType = "etcd"
 )

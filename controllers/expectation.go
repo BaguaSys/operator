@@ -74,7 +74,7 @@ func (r *BaguaReconciler) AddObject(e event.CreateEvent) bool {
 	if owner == nil {
 		return false
 	}
-	key := obj.GetNamespace()+"/"+owner.Name
+	key := obj.GetNamespace() + "/" + owner.Name
 	var expectKey string
 	if _, ok := obj.(*corev1.Pod); ok {
 		expectKey = expectation.GenExpectationPodsKey(key, rtype)
@@ -100,7 +100,7 @@ func (r *BaguaReconciler) DeleteObject(e event.DeleteEvent) bool {
 	if owner == nil {
 		return false
 	}
-	key := obj.GetNamespace()+"/"+owner.Name
+	key := obj.GetNamespace() + "/" + owner.Name
 	var expectKey string
 	if _, ok := obj.(*corev1.Pod); ok {
 		expectKey = expectation.GenExpectationPodsKey(key, rtype)
