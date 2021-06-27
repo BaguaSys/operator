@@ -26,6 +26,12 @@ func (r *BaguaReconciler) setDefault(old, job *api.Bagua) (bool, error) {
 			job.Status.ReplicaStatuses[rtype] = &commonv1.ReplicaStatus{}
 		}
 	}
+
+	if job.Spec.RunPolicy.CleanPodPolicy == nil {
+		none := commonv1.CleanPodPolicyNone
+		job.Spec.RunPolicy.CleanPodPolicy = &none
+	}
+
 	if len(job.Status.Phase) == 0 {
 		job.Status.Phase = commonv1.JobCreated
 	}
