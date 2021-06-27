@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	api "github.com/BaguaSys/operator/api/v1alpha1"
+	config "github.com/BaguaSys/operator/conf"
 )
 
 // BaguaReconciler reconciles a Bagua object
@@ -46,6 +47,7 @@ type BaguaReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+	Config *config.OperatorConfig
 }
 
 //+kubebuilder:rbac:groups=bagua.kuaishou.com,resources=baguas,verbs=get;list;watch;create;update;patch;delete

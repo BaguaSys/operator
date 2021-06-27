@@ -1,0 +1,37 @@
+# TODO
+apiVersion: bagua.kuaishou.com/v1alpha1
+kind: Bagua
+metadata:
+  name: bagua-sample-static
+spec:
+  enableElastic: false
+  replicaSpecs:
+    master:
+      replicas: 1
+      template:
+        spec:
+          hostNetwork: true
+          containers:
+            - name: bagua
+              image: golang:1.15
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - sleep 1d
+              ports:
+                - containerPort: 12345
+    worker:
+      replicas: 2
+      template:
+        spec:
+          hostNetwork: true
+          containers:
+            - name: bagua
+              image: golang:1.15
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - sleep 1d
+            

@@ -38,11 +38,28 @@ type BaguaSpec struct {
 	RunPolicy     commonv1.RunPolicy                             `json:"runPolicy,omitempty"`
 	ReplicaSpecs  map[commonv1.ReplicaType]*commonv1.ReplicaSpec `json:"replicaSpecs,omitempty"`
 	EnableElastic bool                                           `json:"enableElastic,omitempty"`
-	RdzvEndpoint  string                                         `json:"rdzvEndpoint,omitempty"`
 
 	// +kubebuilder:validation:Minimum=1
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
+}
+
+func (spec BaguaSpec) CheckReplicasExist(replicaTypes []commonv1.ReplicaType) error {
+	for _, rt := range replicaTypes {
+		_, ok := spec.ReplicaSpecs[rt]
+		if !ok {
+			return fmt.Errorf("roles(%v) not exist", rt)
+		}
+	}
+
+	return nil
+}
+
+func (spec BaguaSpec) GetReplicas(rt commonv1.ReplicaType) int32 {
+	if spec.ReplicaSpecs[rt] == nil || spec.ReplicaSpecs[rt].Replicas == nil {
+		return 0
+	}
+	return *spec.ReplicaSpecs[rt].Replicas
 }
 
 /*********
