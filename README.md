@@ -8,7 +8,7 @@ This repository implements a kubernetes operator for Bagua distributed training 
 
 
 ### Installation
-- Run the operator locally
+#### Run the operator locally
 ```shell
 
 git clone https://github.com/BaguaSys/operator.git
@@ -19,14 +19,12 @@ kubectl apply -f config/crd/bases/bagua.kuaishou.com_baguas.yaml
 
 go run ./main.go
 ```
-- Deploy the operator
+#### Deploy the operator
+Install Bagua on an existing Kubernetes cluster.
 ```shell
-
-git clone https://github.com/BaguaSys/operator.git
-cd operator
-
-bash deploy/deploy.sh
+kubectl apply -f https://raw.githubusercontent.com/BaguaSys/operator/master/deploy/deployment.yaml
 ```
+Enjoy! Bagua will create resources in namespace `bagua`.
 
 
 ### Examples
