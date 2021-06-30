@@ -1,4 +1,3 @@
-# TODO
 apiVersion: bagua.kuaishou.com/v1alpha1
 kind: Bagua
 metadata:
@@ -10,30 +9,39 @@ spec:
   replicaSpecs:
     etcd:
       replicas: 1
+      restartPolicy: Never
       template:
         spec:
           hostNetwork: true
           containers:
             - name: bagua
-              image: golang:1.15
+              image: quay.io/coreos/etcd:v3.4.16
               imagePullPolicy: IfNotPresent
               command:
-                - sleep
-                - 1d
+                - sh
+                - -c
+                - "/usr/local/bin/etcd --name etcd --data-dir /etcd-data 
+                    --listen-client-urls http://$MY_NODE_IP:12345
+                    --advertise-client-urls http://$MY_NODE_IP:12345
+                    --log-level info --logger zap  --log-outputs stderr --enable-v2=true"
               ports:
                 - containerPort: 12345
     worker:
       replicas: 3
+      restartPolicy: Never
       template:
         spec:
           hostNetwork: true
           containers:
             - name: bagua
-              image: golang:1.15
+              image: baguasys/bagua:latest-pytorch-1.9.0-cuda10.2-cudnn7
               imagePullPolicy: IfNotPresent
               command:
                 - /bin/bash
                 - -c
-                - sleep 1d
+                - python3 -m bagua.distributed.run --nproc_per_node=1 /bagua/examples/elastic_training/main.py 
+              resources:
+                limits:
+                  nvidia.com/gpu: 1
               
             

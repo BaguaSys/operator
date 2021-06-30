@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	commonv1 "github.com/kubeflow/common/pkg/apis/common/v1"
 	"github.com/kubeflow/common/pkg/controller.v1/common"
@@ -103,6 +104,9 @@ func (r *BaguaReconciler) setClusterSpecUnderStaticMode(baguaJob *api.Bagua, pod
 
 	//master address
 	masterAddr := GetPodDomainName(baguaJob.Name, baguaJob.Namespace, string(api.ReplicaMaster), "0")
+	if rtype == string(api.ReplicaMaster) {
+		masterAddr = "0.0.0.0"
+	}
 
 	env := []corev1.EnvVar{
 		{
@@ -127,16 +131,45 @@ func (r *BaguaReconciler) setClusterSpecUnderStaticMode(baguaJob *api.Bagua, pod
 		podTemplate.Spec.Containers[i].Env = append(podTemplate.Spec.Containers[i].Env, env...)
 	}
 
-	r.addInitContainer(baguaJob, podTemplate, rtype)
+	if rtype == string(api.ReplicaWorker) {
+		r.addInitContainer(baguaJob, podTemplate, rtype)
+	}
+
+	fixedOptions := strings.Join([]string{
+		fmt.Sprintf("--nnodes=%v", baguaJob.Spec.GetReplicas(api.ReplicaWorker)+1),
+		"--node_rank=$RANK",
+		"--master_addr=$MASTER_ADDR",
+		"--master_port=$MASTER_PORT",
+	}, " ")
+	hookCommand(podTemplate, fixedOptions)
 
 	return nil
 }
 
 func (r *BaguaReconciler) setClusterSpecUnderElasticMode(baguaJob *api.Bagua, podTemplate *corev1.PodTemplateSpec, rtype, index string) error {
-	if rtype != string(api.ReplicaWorker) {
+	if rtype != string(api.ReplicaEtcd) && rtype != string(api.ReplicaWorker) {
+		return nil
+	}
+	// etcd
+	if rtype == string(api.ReplicaEtcd) {
+		env := []corev1.EnvVar{
+			{
+				Name: "MY_NODE_IP",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "status.hostIP",
+					},
+				},
+			},
+		}
+		for i := range podTemplate.Spec.Containers {
+			podTemplate.Spec.Containers[i].Env = append(podTemplate.Spec.Containers[i].Env, env...)
+		}
+
 		return nil
 	}
 
+	// worker
 	etcdPortsMap, err := r.GetPortsFromJob(baguaJob.Spec.ReplicaSpecs[api.ReplicaEtcd])
 	if err != nil {
 		return err
@@ -161,26 +194,47 @@ func (r *BaguaReconciler) setClusterSpecUnderElasticMode(baguaJob *api.Bagua, po
 		maxReplicas = *baguaJob.Spec.MaxReplicas
 	}
 
-	args := []string{
+	r.addInitContainer(baguaJob, podTemplate, rtype)
+
+	fixedOptions := strings.Join([]string{
 		fmt.Sprintf("--nnodes=%v:%v", minReplicas, maxReplicas),
 		fmt.Sprintf("--rdzv_id=%v", baguaJob.Name),
 		fmt.Sprintf("--rdzv_backend=%v", "etcd-v2"),
 		fmt.Sprintf("--rdzv_endpoint=%v:%v", etcdHost, etcdClientPort),
-	}
-
-	for i := range podTemplate.Spec.Containers {
-		podTemplate.Spec.Containers[i].Args = append(podTemplate.Spec.Containers[i].Args, args...)
-	}
-
-	r.addInitContainer(baguaJob, podTemplate, rtype)
+	}, " ")
+	hookCommand(podTemplate, fixedOptions)
 
 	return nil
 }
 
-func (r *BaguaReconciler) addInitContainer(baguaJob *api.Bagua, podTemplate *corev1.PodTemplateSpec, rtype string) {
-	if rtype != string(api.ReplicaWorker) {
-		return
+func hookCommand(podTemplate *corev1.PodTemplateSpec, newOptions string) {
+	l := len(podTemplate.Spec.Containers[0].Command)
+	cmd := podTemplate.Spec.Containers[0].Command[l-1]
+	cmdSlice := strings.Split(cmd, " ")
+	for i, v := range cmdSlice {
+		if strings.HasPrefix(v, "bagua.") {
+			cmdSlice[i] += " " + newOptions
+			break
+		}
 	}
+
+	podTemplate.Spec.Containers[0].Command[l-1] = strings.Join(cmdSlice, " ")
+}
+
+func getFixedOptionsForMasterOrWorker(elastic bool, workerNum int32) string {
+	if elastic {
+		return strings.Join([]string{
+			"--nnodes=$MIN_SIZE:$MAX_SIZE",
+			"--rdzv_id=$JOB_ID",
+			"--rdzv_backend=etcd-v2",
+			"--rdzv_endpoint=$ETCD_HOST:$ETCD_CLIENT_PORT",
+		}, " ")
+	}
+	return fmt.Sprintf("--nnodes=%v", workerNum+1) +
+		" --node_rank=$RANK --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT"
+}
+
+func (r *BaguaReconciler) addInitContainer(baguaJob *api.Bagua, podTemplate *corev1.PodTemplateSpec, rtype string) {
 	initConatinerImage := r.Config.InitContainerImage
 
 	var target commonv1.ReplicaType
