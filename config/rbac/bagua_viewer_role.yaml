@@ -1,0 +1,20 @@
+# permissions for end users to view baguas.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: bagua-viewer-role
+rules:
+- apiGroups:
+  - bagua.kuaishou.com
+  resources:
+  - baguas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - bagua.kuaishou.com
+  resources:
+  - baguas/status
+  verbs:
+  - get

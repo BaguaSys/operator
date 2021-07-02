@@ -1,0 +1,44 @@
+apiVersion: bagua.kuaishou.com/v1alpha1
+kind: Bagua
+metadata:
+  name: bagua-sample-static
+spec:
+  enableElastic: false
+  replicaSpecs:
+    master:
+      replicas: 1
+      restartPolicy: Never
+      template:
+        spec:
+          hostNetwork: true
+          containers:
+            - name: bagua
+              image: baguasys/bagua:latest-pytorch-1.9.0-cuda10.2-cudnn7
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - python3 -m bagua.distributed.run --nproc_per_node=1 /bagua/examples/mnist/main.py --algorithm allreduce
+              ports:
+                - containerPort: 12345
+              resources:
+                limits:
+                  nvidia.com/gpu: 1
+    worker:
+      replicas: 2
+      restartPolicy: Never
+      template:
+        spec:
+          hostNetwork: true
+          containers:
+            - name: bagua
+              image: baguasys/bagua:latest-pytorch-1.9.0-cuda10.2-cudnn7
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - python3 -m bagua.distributed.run --nproc_per_node=1 /bagua/examples/mnist/main.py --algorithm allreduce
+              resources:
+                limits:
+                  nvidia.com/gpu: 1
+            

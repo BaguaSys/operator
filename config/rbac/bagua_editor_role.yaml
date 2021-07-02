@@ -1,0 +1,24 @@
+# permissions for end users to edit baguas.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: bagua-editor-role
+rules:
+- apiGroups:
+  - bagua.kuaishou.com
+  resources:
+  - baguas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - bagua.kuaishou.com
+  resources:
+  - baguas/status
+  verbs:
+  - get
